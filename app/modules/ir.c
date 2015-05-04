@@ -11,10 +11,10 @@
 #include "c_string.h"
 
 #define os_delay_us ets_delay_us
-#define IR_ON platform_gpio_write(PLATFORM_GPIO_HIGH)
-#define IR_OFF platform_gpio_write(PLATFORM_GPIO_LOW)
+#define IR_ON() platform_gpio_write(PLATFORM_GPIO_HIGH)
+#define IR_OFF() platform_gpio_write(PLATFORM_GPIO_LOW)
 
-uint32 t=0
+uint32 t=0;
 static void enableIROut(uint32 khz){
 	t = 500/khz;		
 }
@@ -24,15 +24,15 @@ static void mark(uint32 end)
     do
     {
         now = system_get_time();
-        IR_ON;os_delay_us(t);
-        IR_OFF;os_delay_us(t);
+        IR_ON();os_delay_us(t);
+        IR_OFF();os_delay_us(t);
     } while (now < end);
 }
-static void space(unit32 end){
+static void space(uint32 end){
     while (system_get_time() < end)
         asm volatile("nop");
 }
-
+#define TOPBIT 0x80000000
 #define NEC_HDR_MARK	9000
 #define NEC_HDR_SPACE	4500
 #define NEC_BIT_MARK	560
@@ -41,13 +41,14 @@ static void space(unit32 end){
 #define NEC_RPT_SPACE	2250
 static void sendNEC(unsigned long data, int nbits)
 {
+  int i;
   enableIROut(38);
   uint32 end = system_get_time();
   end+=NEC_HDR_MARK;
   mark(end);
   end+=NEC_HDR_SPACE;
   space(end);
-  for (int i = 0; i < nbits; i++) {
+  for (i = 0; i < nbits; i++) {
     if (data & TOPBIT) {
       end+=NEC_BIT_MARK;
       mark(end);
