@@ -11,21 +11,21 @@
 #include "c_string.h"
 
 #define os_delay_us ets_delay_us
-#define IR_ON() platform_gpio_write(PLATFORM_GPIO_HIGH)
-#define IR_OFF() platform_gpio_write(PLATFORM_GPIO_LOW)
+#define IR_ON(pin) platform_gpio_write(pin,PLATFORM_GPIO_HIGH)
+#define IR_OFF(pin) platform_gpio_write(pin,PLATFORM_GPIO_LOW)
 
 uint32 t=0;
 static void enableIROut(uint32 khz){
 	t = 500/khz;		
 }
-static void mark(uint32 end)
+static void mark(unsigned pin,uint32 end)
 {
     uint32 now;
     do
     {
         now = system_get_time();
-        IR_ON();os_delay_us(t);
-        IR_OFF();os_delay_us(t);
+        IR_ON(pin);os_delay_us(t);
+        IR_OFF(pin);os_delay_us(t);
     } while (now < end);
 }
 static void space(uint32 end){
@@ -39,42 +39,44 @@ static void space(uint32 end){
 #define NEC_ONE_SPACE	1690
 #define NEC_ZERO_SPACE	560
 #define NEC_RPT_SPACE	2250
-static void sendNEC(unsigned long data, int nbits)
+static void sendNEC(unsigned pin, unsigned long data, int nbits)
 {
   int i;
   enableIROut(38);
   uint32 end = system_get_time();
   end+=NEC_HDR_MARK;
-  mark(end);
+  mark(pin,end);
   end+=NEC_HDR_SPACE;
   space(end);
   for (i = 0; i < nbits; i++) {
     if (data & TOPBIT) {
       end+=NEC_BIT_MARK;
-      mark(end);
+      mark(pin,end);
       end+=NEC_ONE_SPACE;
       space(end);
     } 
     else {
       end+=NEC_BIT_MARK;
-      mark(end);
+      mark(pin,end);
       end+=NEC_ZERO_SPACE;
       space(end);
     }
     data <<= 1;
   }
   end+=NEC_BIT_MARK;
-  mark(end);
-  //space(0);
+  mark(pin,end);
+  space(end);
 }
 // Lua: write( pin, level )
 static int lir_nec( lua_State* L )
 {
   unsigned long data;
   int nbits;
-  data = luaL_checklong(L,1);
-  nbits = luaL_checkinteger( L, 2 );
-  sendNEC(data,nbits);
+  unsigned pin;
+  pin = luaL_checkinteger(L,1);
+  data = luaL_checklong(L,2);
+  nbits = luaL_checkinteger( L, 3 );
+  sendNEC(pin,data,nbits);
   return 0;  
 }
 // Module function map
