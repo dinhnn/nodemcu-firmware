@@ -149,6 +149,15 @@
 #define ROM_MODULES_CJSON
 #endif
 
+#if defined(LUA_USE_MODULES_IR)
+#define MODULES_IR "ir"
+#define ROM_MODULES_IR \
+    _ROM(MODULES_IR, luaopen_ir, ir_map)
+#else
+#define ROM_MODULES_IR
+#endif
+
+
 #define LUA_MODULES_ROM     \
         ROM_MODULES_GPIO    \
         ROM_MODULES_PWM		\
@@ -167,7 +176,7 @@
         ROM_MODULES_OW      \
         ROM_MODULES_BIT     \
         ROM_MODULES_WS2812  \
-        ROM_MODULES_CJSON
-
+        ROM_MODULES_CJSON   \
+        ROM_MODULES_IR    
 #endif
 
